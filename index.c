@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <inttypes.h>
+#define BUFFER_SIZE 2048
 static FILE *log;
 
 void init_log(void){
@@ -19,6 +20,14 @@ typedef struct {
     char buffer_dados[512][3];
 }info_pacote;
 
+typedef struct {
+    uint32_t numero_pacotes;
+    uint32_t max_bytes;
+}info_roteador;
+
+/*
+    @brief: Função para abrir arquivos
+*/
 void open_files(int argc, char **argv, FILE **ptr_input, FILE **ptr_output){
     if (argc != 3)
     {
@@ -43,54 +52,50 @@ void open_files(int argc, char **argv, FILE **ptr_input, FILE **ptr_output){
     init_log();
 }
 
-int main(int argc, char **argv){
-    FILE *input, *output;
-    open_files(argc, argv, &input, &output);
-
-    char linha[2048];
-    if(!fgets(linha, sizeof(linha), input))
+/*
+    @brief: Função para carregar memória
+*/
+void carregar_memoria(info_pacote ***pacotes, char *linha, FILE **input, FILE **output, info_roteador *roteador){
+    if(!fgets(linha, BUFFER_SIZE, *input))
     {
         perror("Erro ao ler a primeira linha do arquivo de entrada\n");
-        fclose(input);
-        fclose(output);
+        fclose(*input);
+        fclose(*output);
         exit(1);
     };
 
-    uint32_t numero_pacotes, qnt_bytes;
-    if (sscanf(linha, "%u %u", &numero_pacotes, &qnt_bytes) != 2) 
+    if (sscanf(linha, "%u %u", &roteador->numero_pacotes, &roteador->max_bytes) != 2) 
     {
         perror("Erro ao ler numero de pacotes e quantidade de bytes\n");
-        fclose(input);
-        fclose(output);
+        fclose(*input);
+        fclose(*output);
         exit(1);
-    }
+    };
 
-    // Inicializando variaveis
-    info_pacote **pacotes;
-    pacotes = (info_pacote **)malloc(sizeof(info_pacote*) * numero_pacotes);
+    *pacotes = malloc(sizeof(info_pacote*) * roteador->numero_pacotes);
     uint16_t i = 0;
 
     fprintf(log, "---> CARREGANDO MEMORIA COM PACOTES <---\n");
-    while (fgets(linha, sizeof(linha), input) != NULL)
+    while (fgets(linha, BUFFER_SIZE, *input) != NULL)
     {
-        pacotes[i] = (info_pacote *)malloc(sizeof(info_pacote));
+        (*pacotes)[i] = (info_pacote *)malloc(sizeof(info_pacote));
         fprintf(log, "linha lida:%s", linha);
         char *ptr = linha;
         int offset = 0;
 
         // %n armazena o numero de caracteres lidos ate o momento
-        sscanf(linha, "%u %u%n", &pacotes[i]->prioridade_pacote, &pacotes[i]->tamanho_pacote, &offset); 
+        sscanf(linha, "%u %u%n", &(*pacotes)[i]->prioridade_pacote, &(*pacotes)[i]->tamanho_pacote, &offset); 
         
         ptr += offset;
         fprintf(log, "Lendo Pacote %d: Prio=%u, Tam=%u\n", 
-                i, pacotes[i]->prioridade_pacote, pacotes[i]->tamanho_pacote);
+                i, (*pacotes)[i]->prioridade_pacote, (*pacotes)[i]->tamanho_pacote);
 
-        for (uint32_t j = 0; j < pacotes[i]->tamanho_pacote; j++)
+        for (uint32_t j = 0; j < (*pacotes)[i]->tamanho_pacote; j++)
         {
-            if (sscanf(ptr, "%s%n", pacotes[i]->buffer_dados[j], &offset) == 1) 
+            if (sscanf(ptr, "%s%n", (*pacotes)[i]->buffer_dados[j], &offset) == 1) 
             {
                 ptr += offset; 
-                fprintf(log, "Byte lido: %s\n", pacotes[i]->buffer_dados[j]);
+                fprintf(log, "Byte lido: %s\n", (*pacotes)[i]->buffer_dados[j]);
             }
         }
         fprintf(log, "\n");
@@ -99,9 +104,22 @@ int main(int argc, char **argv){
         i++;
     }
     fprintf(log, "---> PACOTES CARREGADOS <---\n\n");
+}
 
-    for(uint8_t k = 0; k < numero_pacotes; k++) {
-        free(&pacotes[k]);
+int main(int argc, char **argv){
+    FILE *input, *output;
+    char linha[BUFFER_SIZE];
+    info_roteador roteador;
+    info_pacote **pacotes;
+
+    // Abrindo arquivos e carregando memoria
+    open_files(argc, argv, &input, &output);
+    carregar_memoria(&pacotes, linha, &input, &output, &roteador);
+
+    // Liberando memoria
+    for(uint8_t k = 0; k < roteador.numero_pacotes; k++) 
+    {
+        free(pacotes[k]);
     }
     free(pacotes);
     fclose(input);
