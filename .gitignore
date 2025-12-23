@@ -6,3 +6,6 @@ main
 .vscode/
 *.swp
 *.o
+log.txt
+roteador.input
+te.input
