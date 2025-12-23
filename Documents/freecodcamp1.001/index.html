@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="freecodcamp-1.css">
+    <script src="freecodcamp-1.js"></script>
+    <title>survey-form.freecodecamp.rocks</title>
+</head>
+<body>
+        <h1 id="title">freeCodeCamp Survey Form</h1>
+            <p id="description">Thank you for taking the time to help us improve the platform</p>
+        <form action="" method="post" id="survey-form">
+            <fieldset class="first-fieldset">
+                <label id="name-label" for="name">Name<input class="name" id="name" type="text" placeholder="Enter your name" required></label>
+                <label id="email-label" for="email">Email<input type="email" id="email" class="email" placeholder="Enter your email" required></label>
+                <label id="number-label" for="age">Age (opition)<input type="number" min="10" max="99" placeholder="Age" id="age" class="age"></label>
+            </fieldset>
+                <label id="dropdow-0-label" for="dropdown-0">Which option best describes your current role?
+                    <select name="dropdown-0" id="dropdown-0" >
+                        <option value="" disabled selected>Select current role</option>
+                        <option value="student">Student</option>
+                        <option value="Full time job">Full time job</option>
+                        <option value="Full time learner">Full time learner</option>
+                        <option value="prefer not to say">Prefer not to say</option>
+                        <option value="other">Other</option>
+                    </select>
+                </label>
+                <legend>Would you recommend freeCodeCamp to a friend?</legend>
+                <label id="definitely-label" for="definitely"><input type="radio" id="definitely" class="select" name="select" checked> Definitely</label>
+                <label id="maybe-label" for="maybe"><input type="radio" id="maybe" class="select" name="select" checked> Maybe</label>
+                <label id="not sure-label" for="Not sure"><input type="radio" id="not sure" class="select" name="select" checked> Not sure</label>
+                <label id="dropdown-label" for="dropdown">
+                    What is your favorite feature of freeCodeCamp?
+                    <select name="dropdown" id="dropdown" required>
+                        <option value="" disabled selected>Select an option</option>
+                        <option value="Challenges">Challenges</option>
+                        <option value="Projects">Projects</option>
+                        <option value="Community">Community</option>
+                        <option value="Open Source">Open Source</option>
+                    </select>
+                </label>
+            </fieldset>
+            <fieldset class="four-fieldset">
+                <legend>What would you like to see improved? (Check all that apply)</legend>
+                <label id="front-end-label" for="front-end"><input type="checkbox" name="front-end" id="front-end" class="select" > Front-ent</label>
+                <label id="back-end-label" for="back-end"><input type="checkbox" name="back-end" id="back-end" class="select" > Back-end</label>
+                <label id="data visualization-label" for="data visualization"><input type="checkbox" name="data visualization" id="data visualization" class="select" > Data visualization</label>
+                <label id="challenges-label" for="challenges"><input type="checkbox" name="challenges" id="challenges" class="select"> Challenges</label>
+                <label id="open source community-label" for="open source comunity"><input type="checkbox" name="open source comunity" id="open source comunity" class="select"> Open source comunity</label>
+                <label id="git help rooms-label" for="git help rooms"><input type="checkbox" name="git help rooms" id="git help rooms" class="select"> Git help rooms</label>
+                <label id="videos-label" for="videos"><input type="checkbox" name="videos" id="videos" class="select"> Videos</label>
+                <label id="city metups-label" for="city metups"><input type="checkbox" name="city metups" id="city metups" class="select"> City metups</label>
+                <label id="wiki-label" for="wiki"><input type="checkbox" name="wiki" id="wiki" class="select"> Wiki</label>
+                <label id="forum-label" for="forum"><input type="checkbox" name="forum" id="forum" class="select"> Forum</label>
+                <label id="additional courses-label" for="additional courses"><input type="checkbox" name="additional courses" id="additional courses" class="select">Additional courses</label>            
+            </fieldset>
+            <fieldset class="five-fieldset">
+                <label id="suggestion-label" for="suggestion">Any comments or suggestions?
+                    <textarea name="suggestion" id="suggestion" rows="3" placeholder="Enter your comment here..."></textarea>
+                </label>
+            </fieldset>
+            <input type="submit" value="submit">
+        </form>
+        <hr>
+        <footer>
+            <p class="last-p">Este form foi programado e desenvolvido por <a href="https://www.instagram.com/irlan_s05/" target="_blank">Irlan Felipe</a></p>
+        </footer>
+</body>
+</html>

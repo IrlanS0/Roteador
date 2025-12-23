@@ -1,0 +1,43 @@
+---> CARREGANDO MEMORIA COM PACOTES <---
+linha lida:0 3 01 02 03
+Lendo Pacote 0: Prio=0, Tam=3
+Byte lido: 01
+Byte lido: 02
+Byte lido: 03
+
+linha lida:2 4 06 07 08 09
+Lendo Pacote 1: Prio=2, Tam=4
+Byte lido: 06
+Byte lido: 07
+Byte lido: 08
+Byte lido: 09
+
+linha lida:63 2 0F 10
+Lendo Pacote 2: Prio=63, Tam=2
+Byte lido: 0F
+Byte lido: 10
+
+linha lida:15 6 11 12 13 14 15 16
+Lendo Pacote 3: Prio=15, Tam=6
+Byte lido: 11
+Byte lido: 12
+Byte lido: 13
+Byte lido: 14
+Byte lido: 15
+Byte lido: 16
+
+linha lida:32 5 0A 0B 0C 0D 0E
+Lendo Pacote 4: Prio=32, Tam=5
+Byte lido: 0A
+Byte lido: 0B
+Byte lido: 0C
+Byte lido: 0D
+Byte lido: 0E
+
+linha lida:11 2 04 05
+Lendo Pacote 5: Prio=11, Tam=2
+Byte lido: 04
+Byte lido: 05
+
+---> PACOTES CARREGADOS <---
+
