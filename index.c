@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include <inttypes.h>
 #define BUFFER_SIZE 2048
 static FILE *log;
 
@@ -106,15 +105,44 @@ void carregar_memoria(info_pacote ***pacotes, char *linha, FILE **input, FILE **
     fprintf(log, "---> PACOTES CARREGADOS <---\n\n");
 }
 
+/*
+    @brief: Função para processar pacotes
+*/
+void processar_pacotes(info_pacote **pacote, info_roteador *roteador, int *index){
+    uint32_t acc = 0;
+    uint32_t i = *index;
+    while (i < roteador->numero_pacotes)
+    {
+        if (acc + pacote[i]->tamanho_pacote <= roteador->max_bytes)
+        {
+            acc += pacote[i]->tamanho_pacote;
+            i++;
+            fprintf(log, "Processando pacotes[%u]: acc=%u\n",i - 1, acc);
+        }
+        else 
+            break;
+    }
+    *index = i;
+}
+
+
 int main(int argc, char **argv){
     FILE *input, *output;
     char linha[BUFFER_SIZE];
     info_roteador roteador;
     info_pacote **pacotes;
+    int index = 0;
 
     // Abrindo arquivos e carregando memoria
     open_files(argc, argv, &input, &output);
     carregar_memoria(&pacotes, linha, &input, &output, &roteador);
+
+    fprintf(log, "---> PROCESSANDO PACOTES <---\n");
+    while (index < roteador.numero_pacotes){
+        processar_pacotes(pacotes, &roteador, &index);
+        fprintf(log, "index = %u\n", index);
+    }
+    fprintf(log, "---> TERMINO DO PROCESSAMENTO DE PACOTES <---\n");
 
     // Liberando memoria
     for(uint8_t k = 0; k < roteador.numero_pacotes; k++) 
