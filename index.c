@@ -19,29 +19,33 @@ typedef struct {
     char buffer_dados[512][3];
 }info_pacote;
 
-int main(int argc, char *argv[]){
+void open_files(int argc, char **argv, FILE **ptr_input, FILE **ptr_output){
     if (argc != 3)
     {
         fprintf(stderr, "Uso: %s <arquivo_entrada> <arquivo_saida>\n", argv[0]);
-        return 1;
+        return;
     }
     
-    FILE *input = fopen(argv[1], "r");
-    if (!input)
+    *ptr_input = fopen(argv[1], "r");
+    if (!*(ptr_input))
     {
         perror("Erro ao abrir arquivo de entrada\n");
         exit(1);
     }
 
-    FILE *output = fopen(argv[2], "w");
-    if (!output)
+    *ptr_output = fopen(argv[2], "w");
+    if (!*(ptr_output))
     {
         perror("Erro ao abrir arquivo de saída\n");
-        fclose(input);
+        fclose(*ptr_input);
         exit(1);
     }
-    
     init_log();
+}
+
+int main(int argc, char **argv){
+    FILE *input, *output;
+    open_files(argc, argv, &input, &output);
 
     char linha[2048];
     if(!fgets(linha, sizeof(linha), input))
