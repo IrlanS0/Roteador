@@ -74,11 +74,11 @@ void carregar_memoria(info_pacote ***pacotes, char *linha, FILE **input, FILE **
     *pacotes = malloc(sizeof(info_pacote*) * roteador->numero_pacotes);
     uint16_t i = 0;
 
-    fprintf(log, "---> CARREGANDO MEMORIA COM PACOTES <---\n");
+    // fprintf(log, "---> CARREGANDO MEMORIA COM PACOTES <---\n");
     while (fgets(linha, BUFFER_SIZE, *input) != NULL)
     {
         (*pacotes)[i] = (info_pacote *)malloc(sizeof(info_pacote));
-        fprintf(log, "linha lida:%s", linha);
+        // fprintf(log, "linha lida:%s", linha);
         char *ptr = linha;
         int offset = 0;
 
@@ -86,63 +86,100 @@ void carregar_memoria(info_pacote ***pacotes, char *linha, FILE **input, FILE **
         sscanf(linha, "%u %u%n", &(*pacotes)[i]->prioridade_pacote, &(*pacotes)[i]->tamanho_pacote, &offset); 
         
         ptr += offset;
-        fprintf(log, "Lendo Pacote %d: Prio=%u, Tam=%u\n", 
-                i, (*pacotes)[i]->prioridade_pacote, (*pacotes)[i]->tamanho_pacote);
+        // fprintf(log, "Lendo Pacote %d: Prio=%u, Tam=%u\n", 
+                // i, (*pacotes)[i]->prioridade_pacote, (*pacotes)[i]->tamanho_pacote);
 
         for (uint32_t j = 0; j < (*pacotes)[i]->tamanho_pacote; j++)
         {
             if (sscanf(ptr, "%s%n", (*pacotes)[i]->buffer_dados[j], &offset) == 1) 
             {
                 ptr += offset; 
-                fprintf(log, "Byte lido: %s\n", (*pacotes)[i]->buffer_dados[j]);
+                // fprintf(log, "Byte lido: %s\n", (*pacotes)[i]->buffer_dados[j]);
             }
         }
-        fprintf(log, "\n");
+        // fprintf(log, "\n");
 
         linha[strcspn(linha, "\n")] = '\0';
         i++;
     }
-    fprintf(log, "---> PACOTES CARREGADOS <---\n\n");
+    // fprintf(log, "---> PACOTES CARREGADOS <---\n\n");
+}
+
+/*
+    @brief: Função para comparar
+*/
+int compare(const void *prioridade1, const void *prioridade2)
+{
+    info_pacote *pacoteA = *(info_pacote**)prioridade1;
+    info_pacote *pacoteB = *(info_pacote**)prioridade2;
+
+    if (pacoteA->prioridade_pacote < pacoteB->prioridade_pacote) return 1;
+    if (pacoteA->prioridade_pacote > pacoteB->prioridade_pacote) return -1;
+    return 0;
 }
 
 /*
     @brief: Função para processar pacotes
 */
-void processar_pacotes(info_pacote **pacote, info_roteador *roteador, int *index){
+void processar_pacotes(info_pacote **pacote, info_roteador *roteador, int *index, FILE *output){
     uint32_t acc = 0;
-    uint32_t i = *index;
+    uint32_t i = *index, index_anterior = *index;
     while (i < roteador->numero_pacotes)
     {
         if (acc + pacote[i]->tamanho_pacote <= roteador->max_bytes)
         {
             acc += pacote[i]->tamanho_pacote;
             i++;
-            fprintf(log, "Processando pacotes[%u]: acc=%u\n",i - 1, acc);
+            // fprintf(log, "Processando pacotes[%u]: acc=%u\n",i - 1, acc);
+            *index = i;
         }
-        else 
+        else {
             break;
+        }
+    }
+
+    uint32_t processados = i - index_anterior;
+    if (processados > 0)
+    {
+        // Chama heapsort aqui
+        qsort(&pacote[index_anterior], processados, sizeof(info_pacote*), compare);   
+
+        fprintf(output, "|");
+        for(int k = 0; k < processados; k++)
+        {
+            info_pacote *p = pacote[index_anterior + k];
+
+            for (int b = 0; b < p->tamanho_pacote; b++)
+            {
+                fprintf(output, "%s", p->buffer_dados[b]);
+                if (b < p->tamanho_pacote - 1)
+                    fprintf(output, ",");
+            }
+            fprintf(output, "|");
+        }
+        fprintf(output, "\n");
     }
     *index = i;
 }
-
 
 int main(int argc, char **argv){
     FILE *input, *output;
     char linha[BUFFER_SIZE];
     info_roteador roteador;
-    info_pacote **pacotes;
-    int index = 0;
-
+    info_pacote **pacotes, ***pacote_enviado;
+    int index = 0, aux = 0;
+    
     // Abrindo arquivos e carregando memoria
     open_files(argc, argv, &input, &output);
     carregar_memoria(&pacotes, linha, &input, &output, &roteador);
+    (*pacote_enviado) = malloc(sizeof(info_pacote*) * roteador.numero_pacotes);
 
-    fprintf(log, "---> PROCESSANDO PACOTES <---\n");
+    // fprintf(log, "---> PROCESSANDO PACOTES <---\n");
     while (index < roteador.numero_pacotes){
-        processar_pacotes(pacotes, &roteador, &index);
-        fprintf(log, "index = %u\n", index);
+        processar_pacotes(pacotes, &roteador, &index, output);
+        // fprintf(log, "index = %u\n", index);
     }
-    fprintf(log, "---> TERMINO DO PROCESSAMENTO DE PACOTES <---\n");
+    // fprintf(log, "---> TERMINO DO PROCESSAMENTO DE PACOTES <---\n");
 
     // Liberando memoria
     for(uint8_t k = 0; k < roteador.numero_pacotes; k++) 
