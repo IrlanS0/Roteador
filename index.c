@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#define BUFFER_SIZE 2048
+#define BUFFER_SIZE 8192
 static FILE *log;
 
 void init_log(void){
@@ -35,14 +35,14 @@ void open_files(int argc, char **argv, FILE **ptr_input, FILE **ptr_output){
     }
     
     *ptr_input = fopen(argv[1], "r");
-    if (!*(ptr_input))
+    if (!(*ptr_input))
     {
         perror("Erro ao abrir arquivo de entrada\n");
         exit(1);
     }
 
     *ptr_output = fopen(argv[2], "w");
-    if (!*(ptr_output))
+    if (!(*ptr_output))
     {
         perror("Erro ao abrir arquivo de saída\n");
         fclose(*ptr_input);
@@ -75,16 +75,18 @@ void carregar_memoria(info_pacote ***pacotes, char *linha, FILE **input, FILE **
     uint16_t i = 0;
 
     // fprintf(log, "---> CARREGANDO MEMORIA COM PACOTES <---\n");
-    while (fgets(linha, BUFFER_SIZE, *input) != NULL)
+    while (i < roteador->numero_pacotes && fgets(linha, BUFFER_SIZE, *input) != NULL)
     {
         (*pacotes)[i] = (info_pacote *)malloc(sizeof(info_pacote));
+        (*pacotes)[i]->prioridade_pacote = 0;
+        (*pacotes)[i]->tamanho_pacote = 0;
         // fprintf(log, "linha lida:%s", linha);
         char *ptr = linha;
         int offset = 0;
-
+        
         // %n armazena o numero de caracteres lidos ate o momento
         sscanf(linha, "%u %u%n", &(*pacotes)[i]->prioridade_pacote, &(*pacotes)[i]->tamanho_pacote, &offset); 
-        
+
         ptr += offset;
         // fprintf(log, "Lendo Pacote %d: Prio=%u, Tam=%u\n", 
                 // i, (*pacotes)[i]->prioridade_pacote, (*pacotes)[i]->tamanho_pacote);
@@ -130,10 +132,17 @@ void processar_pacotes(info_pacote **pacote, info_roteador *roteador, int *index
         {
             acc += pacote[i]->tamanho_pacote;
             i++;
-            // fprintf(log, "Processando pacotes[%u]: acc=%u\n",i - 1, acc);
+            fprintf(log, "Processando pacotes[%u]: acc=%u\n",i - 1, acc);
             *index = i;
         }
+        else if (acc == 0) 
+        {
+            fprintf(log, "Erro: Pacote %d muito grande (%u bytes)\n", i, pacote[i]->tamanho_pacote);
+            i++; 
+            // Se quiser apenas ignorar e continuar enchendo o buffer com o próximo, não dê break.
+        }
         else {
+            fprintf(log, "PACOTE %d PROCESSADO\n", i);
             break;
         }
     }
@@ -164,15 +173,14 @@ void processar_pacotes(info_pacote **pacote, info_roteador *roteador, int *index
 
 int main(int argc, char **argv){
     FILE *input, *output;
-    char linha[BUFFER_SIZE];
+    char linha[BUFFER_SIZE] = "";
     info_roteador roteador;
-    info_pacote **pacotes, ***pacote_enviado;
+    info_pacote **pacotes;
     int index = 0, aux = 0;
     
     // Abrindo arquivos e carregando memoria
     open_files(argc, argv, &input, &output);
     carregar_memoria(&pacotes, linha, &input, &output, &roteador);
-    (*pacote_enviado) = malloc(sizeof(info_pacote*) * roteador.numero_pacotes);
 
     // fprintf(log, "---> PROCESSANDO PACOTES <---\n");
     while (index < roteador.numero_pacotes){
@@ -182,7 +190,7 @@ int main(int argc, char **argv){
     // fprintf(log, "---> TERMINO DO PROCESSAMENTO DE PACOTES <---\n");
 
     // Liberando memoria
-    for(uint8_t k = 0; k < roteador.numero_pacotes; k++) 
+    for(uint32_t k = 0; k < roteador.numero_pacotes; k++) 
     {
         free(pacotes[k]);
     }
