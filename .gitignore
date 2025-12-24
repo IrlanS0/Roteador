@@ -1,0 +1,11 @@
+# Ignorar o executável compilado
+*.exe
+main
+
+# Ignorar arquivos de configuração de editor
+.vscode/
+*.swp
+*.o
+*.out
+roteador.output
+te.input
