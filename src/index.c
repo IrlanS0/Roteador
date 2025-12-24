@@ -3,17 +3,12 @@
 #include <string.h>
 #include <stdint.h>
 #define BUFFER_SIZE 8192
-static FILE *log;
 
-void init_log(void){
-    log = fopen("log.txt", "w");
-    if (!log) {
-        perror("Erro ao abrir o arquivo de log");
-        exit(1);
-    }
-}
-
+/*
+    @brief: cria structs
+*/
 typedef struct {
+    uint32_t id_chegada;
     uint32_t prioridade_pacote;
     uint32_t tamanho_pacote;
     char buffer_dados[512][3];
@@ -48,7 +43,6 @@ void open_files(int argc, char **argv, FILE **ptr_input, FILE **ptr_output){
         fclose(*ptr_input);
         exit(1);
     }
-    init_log();
 }
 
 /*
@@ -72,52 +66,93 @@ void carregar_memoria(info_pacote ***pacotes, char *linha, FILE **input, FILE **
     };
 
     *pacotes = malloc(sizeof(info_pacote*) * roteador->numero_pacotes);
-    uint16_t i = 0;
+    uint32_t i = 0;
 
-    // fprintf(log, "---> CARREGANDO MEMORIA COM PACOTES <---\n");
     while (i < roteador->numero_pacotes && fgets(linha, BUFFER_SIZE, *input) != NULL)
     {
         (*pacotes)[i] = (info_pacote *)malloc(sizeof(info_pacote));
         (*pacotes)[i]->prioridade_pacote = 0;
         (*pacotes)[i]->tamanho_pacote = 0;
-        // fprintf(log, "linha lida:%s", linha);
+        (*pacotes)[i]->id_chegada = i;
         char *ptr = linha;
         int offset = 0;
         
         // %n armazena o numero de caracteres lidos ate o momento
         sscanf(linha, "%u %u%n", &(*pacotes)[i]->prioridade_pacote, &(*pacotes)[i]->tamanho_pacote, &offset); 
-
         ptr += offset;
-        // fprintf(log, "Lendo Pacote %d: Prio=%u, Tam=%u\n", 
-                // i, (*pacotes)[i]->prioridade_pacote, (*pacotes)[i]->tamanho_pacote);
 
         for (uint32_t j = 0; j < (*pacotes)[i]->tamanho_pacote; j++)
         {
             if (sscanf(ptr, "%s%n", (*pacotes)[i]->buffer_dados[j], &offset) == 1) 
             {
                 ptr += offset; 
-                // fprintf(log, "Byte lido: %s\n", (*pacotes)[i]->buffer_dados[j]);
             }
         }
-        // fprintf(log, "\n");
 
         linha[strcspn(linha, "\n")] = '\0';
         i++;
     }
-    // fprintf(log, "---> PACOTES CARREGADOS <---\n\n");
 }
 
 /*
-    @brief: Função para comparar
+    @brief: Trocar elementos
 */
-int compare(const void *prioridade1, const void *prioridade2)
+void swap(info_pacote **a, info_pacote **b)
 {
-    info_pacote *pacoteA = *(info_pacote**)prioridade1;
-    info_pacote *pacoteB = *(info_pacote**)prioridade2;
+    info_pacote *aux = *a;
+    *a = *b;
+    *b = aux;
+}
 
-    if (pacoteA->prioridade_pacote < pacoteB->prioridade_pacote) return 1;
-    if (pacoteA->prioridade_pacote > pacoteB->prioridade_pacote) return -1;
-    return 0;
+/*
+    @brief: Diz ordem dos elementos
+*/
+int eh_maior(info_pacote *a, info_pacote *b) {
+    if (a->prioridade_pacote >= b->prioridade_pacote) return 0;
+    
+    if (a->prioridade_pacote < b->prioridade_pacote) {
+        return 1;
+        // Poderiamos implementar dessa forma e tornar o heapsort estavel
+        // if (a->id_chegada < b->id_chegada)
+            // return 0
+    }
+    
+    // return 1;
+}
+
+/*
+    @brief: Heapify
+*/
+void heapify(info_pacote **arr, uint32_t n, uint32_t i){
+    uint32_t maior = i;
+    uint32_t l = 2 * i + 1;
+    uint32_t r = 2 * i + 2;
+
+    if (l < n && eh_maior(arr[l], arr[maior]))   
+        maior = l;
+
+    if (r < n && eh_maior(arr[r], arr[maior]))
+        maior = r;
+
+    if (maior != i)
+    {
+        swap(&arr[i], &arr[maior]);
+        heapify(arr, n, maior);
+    }
+};
+
+/*
+    @brief: construindo heap
+*/
+void heapSort(info_pacote **arr, uint32_t n){
+    for (int i = n / 2 - 1; i >= 0; i--)
+        heapify(arr, n, i);
+
+    for (int i = n - 1; i > 0; i--) {
+        swap(&arr[0], &arr[i]);
+
+        heapify(arr, i, 0);
+    }
 }
 
 /*
@@ -132,17 +167,13 @@ void processar_pacotes(info_pacote **pacote, info_roteador *roteador, int *index
         {
             acc += pacote[i]->tamanho_pacote;
             i++;
-            fprintf(log, "Processando pacotes[%u]: acc=%u\n",i - 1, acc);
             *index = i;
         }
         else if (acc == 0) 
         {
-            fprintf(log, "Erro: Pacote %d muito grande (%u bytes)\n", i, pacote[i]->tamanho_pacote);
             i++; 
-            // Se quiser apenas ignorar e continuar enchendo o buffer com o próximo, não dê break.
         }
         else {
-            fprintf(log, "PACOTE %d PROCESSADO\n", i);
             break;
         }
     }
@@ -150,8 +181,7 @@ void processar_pacotes(info_pacote **pacote, info_roteador *roteador, int *index
     uint32_t processados = i - index_anterior;
     if (processados > 0)
     {
-        // Chama heapsort aqui
-        qsort(&pacote[index_anterior], processados, sizeof(info_pacote*), compare);   
+        heapSort(&pacote[index_anterior], processados);
 
         fprintf(output, "|");
         for(int k = 0; k < processados; k++)
@@ -178,18 +208,16 @@ int main(int argc, char **argv){
     info_pacote **pacotes;
     int index = 0, aux = 0;
     
-    // Abrindo arquivos e carregando memoria
+    // ---> Abrindo arquivos e carregando memoria <---
     open_files(argc, argv, &input, &output);
     carregar_memoria(&pacotes, linha, &input, &output, &roteador);
 
-    // fprintf(log, "---> PROCESSANDO PACOTES <---\n");
+    // ---> Processando pacotes <---
     while (index < roteador.numero_pacotes){
         processar_pacotes(pacotes, &roteador, &index, output);
-        // fprintf(log, "index = %u\n", index);
     }
-    // fprintf(log, "---> TERMINO DO PROCESSAMENTO DE PACOTES <---\n");
 
-    // Liberando memoria
+    // ---> Liberando memoria <---
     for(uint32_t k = 0; k < roteador.numero_pacotes; k++) 
     {
         free(pacotes[k]);
