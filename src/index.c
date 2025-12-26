@@ -117,7 +117,7 @@ int eh_maior(info_pacote *a, info_pacote *b) {
             // return 0
     }
     
-    // return 1;
+    return -1;
 }
 
 /*
@@ -206,7 +206,7 @@ int main(int argc, char **argv){
     char linha[BUFFER_SIZE] = "";
     info_roteador roteador;
     info_pacote **pacotes;
-    int index = 0, aux = 0;
+    int index = 0;
     
     // ---> Abrindo arquivos e carregando memoria <---
     open_files(argc, argv, &input, &output);
